@@ -1,0 +1,407 @@
+{
+  "name": "Aula 10 - CLARA multiagente",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -64,
+        -64
+      ],
+      "id": "86eadf45-193a-410c-a0da-7284b932bf46",
+      "name": "Mensagem recebida",
+      "webhookId": "95bfb0f8-6bc3-43bb-820d-e69aea128e32"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "\nVocê é a CLARA, assistente virtual do Núcleo de Convênios, um órgão hipotético usado em aula.\n\nResponda sempre em português do Brasil, em no máximo três parágrafos curtos.\nNunca liste os convênios da base: informe só o convênio cujo número a pessoa deu. Não invente informação: o que você sabe sobre o Núcleo e sobre os convênios vem das ferramentas.\n\nFERRAMENTAS\n- Sub-agente_INFO: endereço, horário, telefone, e-mail e serviços do Núcleo.\n- Sub-agente_CONVENIOS: dados de um convênio (partes, representantes, objeto, valor, data). Só acione depois que a pessoa informar o número do convênio, no formato NNN/AAAA. Sem o número, peça o número e não acione a ferramenta. Envie a pergunta completa, com o número e o dado pedido, por exemplo \"valor e objeto do convênio 047/2026\".\n- Sub-agente_ATENDIMENTO: registra um chamado para a equipe humana. Antes de acionar, obtenha o nome completo, o e-mail e a descrição do problema; a descrição pode já ter vindo numa mensagem anterior da conversa, e então não peça de novo. Passe os três na mensagem para a ferramenta.\n\nROTEAMENTO\n- Saudação ou pergunta sobre você: responda direto, sem ferramenta, e apresente-se como CLARA.\n- Endereço, horário, contato ou serviços: Sub-agente_INFO.\n- Convênio, parceria, valor ou vigência: peça o número; com o número, Sub-agente_CONVENIOS.\n- Reclamação, caso que as outras ferramentas não resolvem ou pedido para falar com uma pessoa: colete os três dados e acione Sub-agente_ATENDIMENTO. Ao final, informe o protocolo devolvido.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "de19bbda-68d2-460e-9175-4dba13b3b351",
+      "name": "CLARA"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -80,
+        240
+      ],
+      "id": "88499400-b633-4414-9ceb-de506d4e80ef",
+      "name": "Memória"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        240
+      ],
+      "id": "d51501c7-458e-4206-bd26-d8a5be3ee975",
+      "name": "Modelo da  CLARA",
+      "credentials": {
+        "groqApi": {
+          "id": "vuPzUhB6BK7acWra",
+          "name": "Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Responde sobre endereço, horário, telefone, e-mail e serviços do Núcleo de Convênios.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "\nVocê responde perguntas sobre o Núcleo de Convênios usando SOMENTE os dados abaixo. Se a resposta não estiver aqui, diga que não tem essa informação.\n\nDADOS DO NÚCLEO (fictícios)\nNome: Núcleo de Convênios\nEndereço: Rua das Parcerias, 100, Centro, Vale Verde/MT\nTelefone: (00) 0000-0000\nE-mail: atendimento@nucleo-convenios.example\nAtendimento presencial e por telefone: segunda a sexta, das 8h às 17h\nChat e e-mail: 24 horas, com resposta humana no próximo dia útil\nServiços: consulta a convênios vigentes, orientação sobre prestação de contas, protocolo de documentos, agendamento de reuniões com a equipe técnica\n",
+          "maxIterations": 4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        64,
+        224
+      ],
+      "id": "d6f76c3f-35fe-4212-8088-fa3b2f63ac5c",
+      "name": "Sub-agente INFO"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        464,
+        336
+      ],
+      "id": "a099fbb5-9675-45b0-91c7-49cdb9c1ff3a",
+      "name": "Modelo dos sub-agentes",
+      "credentials": {
+        "groqApi": {
+          "id": "vuPzUhB6BK7acWra",
+          "name": "Groq"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Consulta os documentos dos convênios: partes, representantes, objeto, valor e data. Envie a pergunta completa, com o número do convênio e o dado pedido.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "\nVocê consulta os documentos dos convênios do Núcleo.\n\n- Busque na ferramenta Base_de_convenios com o número do convênio e o dado pedido, por exemplo \"047/2026 valor global\".\n- Cada trecho traz nos metadados o número do convênio (campo convenio) e o arquivo de origem (campo arquivo). O valor, o objeto e a data podem estar num trecho que não repete o número no texto: é o campo convenio que diz a que convênio o trecho pertence.\n- Se o dado pedido não aparecer nos trechos do convênio, faça uma nova busca só com o assunto, por exemplo \"valor global\", e use os trechos cujo campo convenio é o número pedido.\n- Responda só com o que os trechos dizem e cite o arquivo. Nunca estime nem complete valores, nomes ou datas: se o dado não estiver nos trechos, diga que não o encontrou.\n- Se nenhum trecho tiver o campo convenio igual ao número pedido, diga apenas que não há registro desse número na base.\n- Nunca cite nem resuma outros convênios além do pedido, mesmo que apareçam nos trechos.\n",
+          "maxIterations": 4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        672,
+        -32
+      ],
+      "id": "54f3409a-918f-414d-b21b-a39a0f30be5c",
+      "name": "Sub-agente CONVENIOS"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Busca por semelhança nos trechos dos convênios. Devolve os trechos mais próximos da consulta, com o arquivo de origem.",
+        "memoryKey": {
+          "__rl": true,
+          "value": "convenios",
+          "mode": "list",
+          "cachedResultName": "convenios"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreInMemory",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        112
+      ],
+      "id": "62af2049-d672-4deb-963c-7d20043f8c1c",
+      "name": "Base de convenios"
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        816,
+        192
+      ],
+      "id": "9d50987c-f687-451b-a5f2-f791429f97f5",
+      "name": "Embeddings",
+      "credentials": {
+        "ollamaApi": {
+          "id": "aV9q4xTrmX3twyPm",
+          "name": "Ollama"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Registra um chamado para a equipe humana. Envie na mensagem o nome completo, o e-mail e a descrição do problema.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "\nVocê registra chamados para a equipe humana do Núcleo de Convênios.\n\n- Use a ferramenta Registrar_chamado com o nome completo, o e-mail e a descrição recebidos.\n- Se faltar algum dos três dados, não registre: responda quais dados faltam.\n- Depois de registrar, responda com o protocolo devolvido pela ferramenta e diga que a equipe responde no próximo dia útil.\n",
+          "maxIterations": 4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        640,
+        448
+      ],
+      "id": "38d35c20-d0de-4473-968d-b2e6783cfff9",
+      "name": "Sub-agente ATENDIMENTO"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Grava um chamado na tabela chamados e devolve o protocolo.",
+        "dataTableId": {
+          "__rl": true,
+          "value": "euJSYjzCbMKeKKER",
+          "mode": "list",
+          "cachedResultName": "chamados",
+          "cachedResultUrl": "/projects/PcEFk85AwDWrVkB7/datatables/euJSYjzCbMKeKKER"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "protocolo": "={{ 'CH-' + $now.toFormat('yyyyMMdd-HHmmss') }}",
+            "nome": "={{ $fromAI('nome', 'Nome completo da pessoa', 'string') }}",
+            "email": "={{ $fromAI('email', 'E-mail da pessoa', 'string') }}",
+            "descricao": "={{ $fromAI('descricao', 'Descrição do problema', 'string') }}",
+            "registrado_em": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "protocolo",
+              "displayName": "protocolo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "nome",
+              "displayName": "nome",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "descricao",
+              "displayName": "descricao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "registrado_em",
+              "displayName": "registrado_em",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        656
+      ],
+      "id": "e2d14a68-8fa9-4aa2-a4d9-ea6253d8d847",
+      "name": "Registrar chamado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Mensagem recebida": {
+      "main": [
+        [
+          {
+            "node": "CLARA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memória": {
+      "ai_memory": [
+        [
+          {
+            "node": "CLARA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo da  CLARA": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CLARA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub-agente INFO": {
+      "ai_tool": [
+        [
+          {
+            "node": "CLARA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo dos sub-agentes": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Sub-agente INFO",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Sub-agente CONVENIOS",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Sub-agente ATENDIMENTO",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub-agente CONVENIOS": {
+      "ai_tool": [
+        [
+          {
+            "node": "CLARA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Base de convenios": {
+      "ai_tool": [
+        [
+          {
+            "node": "Sub-agente CONVENIOS",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Base de convenios",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sub-agente ATENDIMENTO": {
+      "ai_tool": [
+        [
+          {
+            "node": "CLARA",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar chamado": {
+      "ai_tool": [
+        [
+          {
+            "node": "Sub-agente ATENDIMENTO",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "76db10e3-14db-456f-abd1-fd50e48e2c32",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9c49a4c95b8e30a6481a43f257f81690489e01fe443683f6e1311b5f4ae77041"
+  },
+  "nodeGroups": [],
+  "id": "lAZbvxguFkxZWufY",
+  "tags": []
+}
